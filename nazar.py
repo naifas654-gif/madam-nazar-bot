@@ -1,30 +1,32 @@
 import os
-import time
-from flask import Flask
-from threading import Thread
-from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
-from telegram.ext import ApplicationBuilder, ContextTypes, CommandHandler, MessageHandler, filters
+from flask import Flask, request
+from telegram import Update, Bot, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram.ext import Application, MessageHandler, filters, ContextTypes
 
+TOKEN = "8639550044:AAFV6yiRM6KEK3sv5QZHXXlVqReoPcuXoeI"
 app = Flask(__name__)
-@app.route('/')
-def home(): return "البوت يعمل!"
+application = Application.builder().token(TOKEN).build()
 
-async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    user_text = update.message.text.strip().lower()
-    if user_text == "نزار" or user_text == "مدام نزار":
-        keyboard = [[InlineKeyboardButton("⏰ يتغير الموقع الساعة 09:02 صباحاً", callback_data='ignore')]]
-        reply_markup = InlineKeyboardMarkup(keyboard)
-        await update.message.reply_photo(
-            photo="https://madamnazar.io/assets/nazar.jpg",
-            caption="تفضل هذا موقع مدام نزار اليوم 🔮🃏",
-            reply_markup=reply_markup
+async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    text = update.message.text
+    if "نزار" in text or "مدام نزار" in text:
+        message_text = (
+            "📍 موقع مدام نزار لهذا اليوم:\n\n"
+            "⏰ يتغير الموقع في تمام الساعة 09:02 صباحاً بتوقيت مكة المكرمة."
         )
+        
+        keyboard = [[InlineKeyboardButton("اضغط هنا لفتح الخريطة 🗺️", url="https://jeanropke.github.io/RDOMap/")]]
+        reply_markup = InlineKeyboardMarkup(keyboard)
+        
+        await update.message.reply_text(message_text, reply_markup=reply_markup)
 
-def run():
-    app.run(host='0.0.0.0', port=int(os.environ.get("PORT", 8080)))
+application.add_handler(MessageHandler(filters.TEXT & (~filters.COMMAND), handle_message))
+
+@app.route('/', methods=['POST'])
+def webhook():
+    return "Bot is running"
 
 if __name__ == '__main__':
-    Thread(target=run).start()
-    app_bot = ApplicationBuilder().token("8639550044:AAFV6yiRM6KEK3sv5QZHXXlVqReoPcuXoeI").build()
-    app_bot.add_handler(MessageHandler(filters.TEXT & (~filters.COMMAND), start))
-    app_bot.run_polling()
+    port = int(os.environ.get("PORT", 8080))
+    app.run(host='0.0.0.0', port=port)
+
